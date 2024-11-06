@@ -8,6 +8,7 @@ import cv2 #pip install opencv-python
 #importando mediapipe
 import mediapipe as mp #pip install mediapipe
 import numpy as np
+import time
 
 # capturar a camêra
 cap = cv2.VideoCapture(0)
@@ -38,13 +39,10 @@ def calculo_ear(face,p_olho_dir,p_olho_esq):
     media_ear = (ear_esq + ear_dir)/2
     return media_ear
 
+ear_limiar = 0.27
+dormindo = 0
+
 #FIXME:EAR (usando distância euclidiana)
-
-
-
-
-
-
 
 # enquanto a camera estiver aberta
 with mp_face_mesh.FaceMesh(min_detection_confidence=0.5,min_tracking_confidence=0.5) as facemesh:
@@ -82,8 +80,6 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5,min_tracking_confidence=
                                         landmark_drawing_spec=mp_drawing.DrawingSpec(color=(255,102,102),thickness=1,circle_radius=1),
                                         connection_drawing_spec= mp_drawing.DrawingSpec(color=(102,204,0),thickness=1,circle_radius=1)
                                         )    
-
-
                 #NOTE: Retornando as coordenadas
                 # acessando atributo landmark - pontos 
                 face = face_landmarks.landmark
@@ -102,11 +98,30 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5,min_tracking_confidence=
                             0.9,
                             (255,255,255),
                             2)
+                #verificação da limiar
+                if ear < ear_limiar:
+                    t_inicial = time.time() if dormindo == 0 else t_inicial
+                    dormindo = 1
+                if dormindo == 1 and ear >= ear_limiar:
+                    dormindo = 0
+                t_final = time.time()
+
+                tempo = (t_final-t_inicial) if dormindo == 1 else 0.0
+                cv2.putText(frame, f"Tempo: {round(tempo, 3)}", (1, 80),
+                                        cv2.FONT_HERSHEY_DUPLEX,
+                                        0.9, (255, 255, 255), 2)
+                # identificar sonolência
+                if tempo>=1.5:
+                    cv2.rectangle(frame, (30, 400), (610, 452), (109, 233, 219), -1)
+                    cv2.putText(frame, f"Muito tempo com olhos fechados!", (80, 435),
+                                    cv2.FONT_HERSHEY_DUPLEX,
+                                    0.85, (58,58,55), 1)
+
+
         except Exception as e:
             print("Erro", e) # saiu da camera
         finally:
             print("Processamento Concluido")
-
         cv2.imshow('Camera',frame)
 
         if cv2.waitKey(10) & 0xFF == ord('c'):
