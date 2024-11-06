@@ -69,30 +69,44 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5,min_tracking_confidence=
         # 2 - Agora temos que mostrar essa detecção
         # 3 - Vamos usar o for que é especie de while compacto
         # 4 - Vamos usar multi_face_landmarks :  x,y,z de cada ponto que MediaPipe encontrar no rosto        
-        for face_landmarks in saida_facemesh.multi_face_landmarks:
-            # desenhando
-            # 1 - frame : representa o frame de vídeo
-            # 2 - face_landmarks: os landmarks detectados - pontos específicos
-            # 3 - FACEMESH_CONTOURS - é uma constante que representa os contornos da face na malha facial.
-            # FIXME: face_landmarks - lista de pontos (usado no projeto)
-            mp_drawing.draw_landmarks(frame,
-                                      face_landmarks,
-                                      mp_face_mesh.FACEMESH_CONTOURS,
-                                      landmark_drawing_spec=mp_drawing.DrawingSpec(color=(255,102,102),thickness=1,circle_radius=1),
-                                      connection_drawing_spec= mp_drawing.DrawingSpec(color=(102,204,0),thickness=1,circle_radius=1)
-                                      )    
+        try:
+            for face_landmarks in saida_facemesh.multi_face_landmarks:
+                # desenhando
+                # 1 - frame : representa o frame de vídeo
+                # 2 - face_landmarks: os landmarks detectados - pontos específicos
+                # 3 - FACEMESH_CONTOURS - é uma constante que representa os contornos da face na malha facial.
+                # FIXME: face_landmarks - lista de pontos (usado no projeto)
+                mp_drawing.draw_landmarks(frame,
+                                        face_landmarks,
+                                        mp_face_mesh.FACEMESH_CONTOURS,
+                                        landmark_drawing_spec=mp_drawing.DrawingSpec(color=(255,102,102),thickness=1,circle_radius=1),
+                                        connection_drawing_spec= mp_drawing.DrawingSpec(color=(102,204,0),thickness=1,circle_radius=1)
+                                        )    
 
 
-            #NOTE: Retornando as coordenadas
-            # acessando atributo landmark - pontos 
-            face = face_landmarks.landmark
-            # for    in     enumerate
-            for id_coord,coord_xyz in enumerate(face):
-                if id_coord in p_olhos:
-                    coord_cv = mp_drawing._normalized_to_pixel_coordinates(coord_xyz.x, coord_xyz.y,largura,comprimento)
-                    cv2.circle(frame,coord_cv,2,(255,0,0),-1)
+                #NOTE: Retornando as coordenadas
+                # acessando atributo landmark - pontos 
+                face = face_landmarks.landmark
+                # for    in     enumerate
+                for id_coord,coord_xyz in enumerate(face):
+                    if id_coord in p_olhos:
+                        coord_cv = mp_drawing._normalized_to_pixel_coordinates(coord_xyz.x, coord_xyz.y,largura,comprimento)
+                        cv2.circle(frame,coord_cv,2,(255,0,0),-1)
 
-            #FIXME: aula_amanha (chamar o calculo EAR )
+                #FIXME:  (chamar o calculo EAR, mostrar o calculo no frame)
+                ear = calculo_ear(face,p_olho_dir,p_olho_esq)
+                cv2.rectangle(frame,(0,1),(290,140),(58,58,55))
+                cv2.putText(frame,
+                            f"EAR {round(ear,2)}",
+                            (1,24),cv2.FONT_HERSHEY_DUPLEX,
+                            0.9,
+                            (255,255,255),
+                            2)
+        except Exception as e:
+            print("Erro", e) # saiu da camera
+        finally:
+            print("Processamento Concluido")
+
         cv2.imshow('Camera',frame)
 
         if cv2.waitKey(10) & 0xFF == ord('c'):
